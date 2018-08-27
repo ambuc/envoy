@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "common/common/hash.h"
+#include "common/common/lock_guard.h"
 #include "common/common/thread.h"
 #include "common/common/thread_annotations.h"
 #include "common/stats/stat_data_allocator_impl.h"
@@ -54,6 +55,12 @@ public:
 
   // StatDataAllocator
   bool requiresBoundedStatNameSize() const override { return false; }
+
+  // SymbolTableImpl
+  StatNamePtr encode(absl::string_view sv) {
+    Thread::LockGuard lock(mutex_);
+    return table_.encode(sv);
+  }
 
 private:
   struct HeapStatHash_ {

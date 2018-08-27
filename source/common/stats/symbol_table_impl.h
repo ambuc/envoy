@@ -12,6 +12,8 @@
 
 #include "common/common/assert.h"
 #include "common/common/hash.h"
+#include "common/common/lock_guard.h"
+#include "common/common/thread.h"
 #include "common/common/utility.h"
 
 #include "absl/strings/str_join.h"
@@ -116,6 +118,9 @@ private:
   // TODO(ambuc): There might be an optimization here relating to storing ranges of freed symbols
   // using an Envoy::IntervalSet.
   std::stack<Symbol> pool_;
+
+  // This must be called during both encode() and free().
+  mutable Thread::MutexBasicLockable lock_;
 };
 
 /**
@@ -144,6 +149,17 @@ private:
   SymbolVec symbolVec() { return symbol_vec_; }
   SymbolVec symbol_vec_;
   SymbolTableImpl& symbol_table_;
+};
+
+struct StatNamePtrHash_ {
+  size_t operator()(const StatNamePtr& a) const { return a->hash(); }
+};
+
+struct StatNamePtrCompare_ {
+  bool operator()(const StatNamePtr& a, const StatNamePtr& b) const {
+    // This extracts the underlying statnames.
+    return (*a.get() == *b.get());
+  }
 };
 
 } // namespace Stats
