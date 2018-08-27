@@ -11,6 +11,7 @@
 #include "envoy/stats/symbol_table.h"
 
 #include "common/common/assert.h"
+#include "common/common/hash.h"
 #include "common/common/utility.h"
 
 #include "absl/strings/str_join.h"
@@ -127,6 +128,16 @@ public:
       : symbol_vec_(symbol_vec), symbol_table_(symbol_table) {}
   ~StatNameImpl() override { symbol_table_.free(symbol_vec_); }
   std::string toString() const override { return symbol_table_.decode(symbol_vec_); }
+
+  // Returns a hash of the underlying symbol vector, since StatNames are uniquely defined by their
+  // symbol vectors.
+  uint64_t hash() const override { return HashUtil::hashVector(symbol_vec_); }
+  // Compares on the underlying symbol vectors.
+  // NB: operator==(std::vector) checks size first, then compares equality for each element.
+  bool operator==(const StatName& rhs) const override {
+    const StatNameImpl& r = dynamic_cast<const StatNameImpl&>(rhs);
+    return symbol_vec_ == r.symbol_vec_;
+  }
 
 private:
   friend class StatNameTest;

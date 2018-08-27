@@ -18,6 +18,8 @@ class StatName {
 public:
   virtual ~StatName(){};
   virtual std::string toString() const PURE;
+  virtual uint64_t hash() const PURE;
+  virtual bool operator==(const StatName& rhs) const PURE;
 };
 
 using StatNamePtr = std::unique_ptr<StatName>;
