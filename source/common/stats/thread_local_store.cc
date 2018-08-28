@@ -36,13 +36,11 @@ ThreadLocalStoreImpl::~ThreadLocalStoreImpl() {
 std::vector<CounterSharedPtr> ThreadLocalStoreImpl::counters() const {
   // Handle de-dup due to overlapping scopes.
   std::vector<CounterSharedPtr> ret;
-  // TODO(ambuc): We could dedup by comparing statnameptrs instead of extracting the underlying
-  // names, here and in ThreadLocalStoreImpl::gauges() below.
-  std::unordered_set<std::string> names;
+  std::unordered_set<StatName*, StatNameHash_, StatNameCompare_> names;
   Thread::LockGuard lock(lock_);
   for (ScopeImpl* scope : scopes_) {
     for (auto& counter : scope->central_cache_.counters_) {
-      if (names.insert(counter.first->toString()).second) {
+      if (names.insert(counter.first.get()).second) {
         ret.push_back(counter.second);
       }
     }
@@ -61,11 +59,11 @@ ScopePtr ThreadLocalStoreImpl::createScope(const std::string& name) {
 std::vector<GaugeSharedPtr> ThreadLocalStoreImpl::gauges() const {
   // Handle de-dup due to overlapping scopes.
   std::vector<GaugeSharedPtr> ret;
-  std::unordered_set<std::string> names;
+  std::unordered_set<StatName*, StatNameHash_, StatNameCompare_> names;
   Thread::LockGuard lock(lock_);
   for (ScopeImpl* scope : scopes_) {
     for (auto& gauge : scope->central_cache_.gauges_) {
-      if (names.insert(gauge.first->toString()).second) {
+      if (names.insert(gauge.first.get()).second) {
         ret.push_back(gauge.second);
       }
     }

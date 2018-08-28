@@ -24,6 +24,14 @@ public:
 
 using StatNamePtr = std::unique_ptr<StatName>;
 
+struct StatNameHash_ {
+  size_t operator()(const StatName* a) const { return a->hash(); }
+};
+
+struct StatNameCompare_ {
+  bool operator()(const StatName* a, const StatName* b) const { return (*a == *b); }
+};
+
 /**
  * Interface for shortening and retrieving stat names.
  *
